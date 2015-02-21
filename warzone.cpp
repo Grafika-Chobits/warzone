@@ -1,14 +1,3 @@
-/* Raw Graphics Demonstrator Main Program
- * Computer Graphics Group "Chobits"
- * 
- * NOTES:
- * http://www.ummon.eu/Linux/API/Devices/framebuffer.html
- * 
- * TODOS:
- * - make dedicated canvas frame handler (currently the canvas frame is actually screen-sized)
- * 
- */
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -25,15 +14,14 @@
 #include <algorithm>
 #include <iostream>
 
-#define min(X,Y) (((X) < (Y)) ? (X) : (Y))
-#define max(X,Y) (((X) > (Y)) ? (X) : (Y))
-
-
 /* SETTINGS ------------------------------------------------------------ */
 #define screenXstart 250
 #define screenX 1366
 #define screenY 768
 #define mouseSensitivity 1
+
+#define min(X,Y) (((X) < (Y)) ? (X) : (Y))
+#define max(X,Y) (((X) > (Y)) ? (X) : (Y))
 
 using namespace std;
 
@@ -231,53 +219,6 @@ void plotLine(Frame* frm, int x0, int y0, int x1, int y1, RGB lineColor)
 		if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
 		if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
 	}
-}
-
-void plotLineWidth(Frame* frm, int x0, int y0, int x1, int y1, float wd, RGB lineColor) { 
-	int dx = abs(x1-x0), sx = x0 < x1 ? 1 : -1; 
-	int dy = abs(y1-y0), sy = y0 < y1 ? 1 : -1; 
-	int err = dx-dy, e2, x2, y2;                          /* error value e_xy */
-
-	float ed = dx+dy == 0 ? 1 : sqrt((float)dx*dx+(float)dy*dy);
-
-	for (wd = (wd+1)/2; ; ) {                                   /* pixel loop */
-		insertPixel(frm, coord(x0, y0), rgb(max(0,lineColor.r*(abs(err-dx+dy)/ed-wd+1)), 
-											max(0,lineColor.g*(abs(err-dx+dy)/ed-wd+1)), 
-											max(0,lineColor.b*(abs(err-dx+dy)/ed-wd+1))));
-
-		e2 = err; x2 = x0;
-		if (2*e2 >= -dx) {                                           /* x step */
-			for (e2 += dy, y2 = y0; e2 < ed*wd && (y1 != y2 || dx > dy); e2 += dx)
-				y2 += sy;
-				insertPixel(frm, coord(x0, y2), rgb(max(0,lineColor.r*(abs(e2)/ed-wd+1)), 
-															max(0,lineColor.g*(abs(e2)/ed-wd+1)), 
-															max(0,lineColor.b*(abs(e2)/ed-wd+1)))); 
-			if (x0 == x1) break;
-			e2 = err; err -= dy; x0 += sx; 
-		} 
-		
-		if (2*e2 <= dy) {                                            /* y step */
-			for (e2 = dx-e2; e2 < ed*wd && (x1 != x2 || dx < dy); e2 += dy)
-				x2 += sx;
-				insertPixel(frm, coord(x2, y0), rgb(max(0,lineColor.r*(abs(e2)/ed-wd+1)), 
-															max(0,lineColor.g*(abs(e2)/ed-wd+1)), 
-															max(0,lineColor.b*(abs(e2)/ed-wd+1)))); 
-			if (y0 == y1) break;
-			err += dx; y0 += sy; 
-		}
-	}
-}
-
-vector<Coord> getBirdCoordinate(Coord center) {
-	vector<Coord> birdCoord;
-
-	birdCoord.push_back(coord(center.x, center.y));
-	birdCoord.push_back(coord(birdCoord.at(0).x+10, birdCoord.at(0).y-5));
-	birdCoord.push_back(coord(birdCoord.at(1).x+13, birdCoord.at(1).y+7));
-	birdCoord.push_back(coord(birdCoord.at(2).x-10, birdCoord.at(2).y+5));
-	birdCoord.push_back(coord(birdCoord.at(3).x-10, birdCoord.at(3).y-5));
-
-	return birdCoord;
 }
 
 /* FUNCTIONS FOR SCANLINE ALGORITHM ---------------------------------------------------- */
@@ -497,6 +438,42 @@ void drawBomb(Frame *frame, Coord center, RGB color)
 	plotLine(frame, center.x + 3, center.y + panjangBomb / 2, center.x, center.y + (panjangBomb / 2 + 4), color);
 }
 
+void drawParachute(Frame *frame, Coord center, RGB color, int size){
+	int parachuteRadius = size;
+	int parachuteDiameter = parachuteRadius * 2;
+	
+	// parachute upper border
+	plotHalfCircle(frame, center.x, center.y, parachuteRadius, color);
+	
+	// parachute bottom border
+	plotHalfCircle(frame, center.x - parachuteDiameter / 3, center.y, parachuteRadius / 3, color);
+	plotHalfCircle(frame, center.x, center.y, parachuteRadius / 3, color);
+	plotHalfCircle(frame, center.x + parachuteDiameter / 3, center.y, parachuteRadius / 3, color);
+	
+	// parachute string
+	plotLine(frame, center.x - parachuteRadius, center.y, center.x - parachuteRadius / 6, center.y + parachuteRadius, color); // left
+	plotLine(frame, center.x + parachuteRadius, center.y, center.x + parachuteRadius / 6, center.y + parachuteRadius, color); // right
+	
+	// stickman
+	plotCircle(frame, center.x, center.y + parachuteRadius - parachuteRadius / 10, parachuteRadius / 10, color); //head
+	
+	int bodyStartingPoint = center.y + parachuteRadius - parachuteRadius / 10 + parachuteRadius / 10;
+	plotLine(frame, center.x, bodyStartingPoint, center.x, bodyStartingPoint + parachuteRadius / 5, color); // body
+	
+	int legStartingPoint = bodyStartingPoint + parachuteRadius / 5;
+	plotLine(frame, center.x, legStartingPoint, center.x + parachuteRadius / 13, legStartingPoint + parachuteRadius / 10, color); // right leg
+	plotLine(frame, center.x, legStartingPoint, center.x - parachuteRadius / 13, legStartingPoint + parachuteRadius / 10, color); // left leg
+	
+	plotLine(frame, center.x, bodyStartingPoint, center.x - parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, color);
+	plotLine(frame, center.x, bodyStartingPoint, center.x + parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, color);
+	plotLine(frame, center.x - parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, center.x - parachuteRadius / 6, center.y + parachuteRadius, color);
+	plotLine(frame, center.x + parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, center.x + parachuteRadius / 6, center.y + parachuteRadius, color);
+}
+
+void drawWalkingStickman(Frame *frame, Coord center, RGB color, int animator){
+	
+}
+
 /* MAIN FUNCTION ------------------------------------------------------- */
 int main() {	
 	/* Preparations ---------------------------------------------------- */
@@ -590,6 +567,10 @@ int main() {
 	int isXploded = 0;
 	Coord coordXplosion;
 	
+	int size = 25;
+	int chuteX = 400;
+	int chuteY = 50;
+	
 	/* Main Loop ------------------------------------------------------- */
 	
 	while (loop) {
@@ -605,6 +586,7 @@ int main() {
 		// draw plane
 		drawPlane(&canvas, coord(planeXPosition -= planeVelocity, planeYPosition), rgb(99, 99, 99));
 		
+		drawParachute(&canvas, coord(chuteX+=6, chuteY+=2), rgb(99, 99, 99), size++);
 		
 		// stickman ammunition
 		/*if(isFirstAmmunitionReleased){
