@@ -417,11 +417,6 @@ void drawPlane(Frame *frame, Coord position, RGB color) {
 	for(int i = -31; i <= height-31; i++){
 		vector<Coord> planeIntersectionPoint = intersectionGenerator(i, planeCoordinates);
 		
-		if(planeIntersectionPoint.size() % 2 != 0){
-			unique(planeIntersectionPoint.begin(), planeIntersectionPoint.end(), compareSameAxis);
-			planeIntersectionPoint.erase(planeIntersectionPoint.end() - 1);
-		}
-		
 		for(int j = 0; j < planeIntersectionPoint.size() - 1; j++){
 			if(j % 2 == 0){
 				int x0 = planeIntersectionPoint.at(j).x + xPlaneCoordinate;
