@@ -708,6 +708,14 @@ void drawWalkingStickman(Frame *frame, Coord center, RGB color){
 	}
 }
 
+void drawCannon(Frame *frame, Coord center, RGB color)
+{
+	plotCircle(frame, center.x, center.y, 100, color); //head
+	plotLine(frame, center.x, center.y -25, center.x + 80, center.y - 100, color);
+	plotLine(frame, center.x + 20, center.y, center.x + 100, center.y - 80, color);
+	plotCircle(frame, center.x + 90, center.y - 90, 12, color);
+}
+
 /* MAIN FUNCTION ------------------------------------------------------- */
 int main() {	
 	/* Preparations ---------------------------------------------------- */
@@ -824,6 +832,9 @@ int main() {
 		drawParachute(&canvas, coord(chuteX+=4, chuteY+=1), rgb(99, 99, 99), 300);
 		
 		drawWalkingStickman(&canvas, coord(stickmanX-=4, 503), rgb(99, 99, 99));
+		
+		//draw new Cannon
+		drawCannon(&canvas, coord(0, canvasHeight), rgb(99, 99, 99));
 		
 		// stickman ammunition
 		/*if(isFirstAmmunitionReleased){
