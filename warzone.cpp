@@ -264,23 +264,58 @@ bool compareSameAxis(const s_coord &a, const s_coord &b){
 	return a.x == b.x;
 }
 
+bool operator==(const Coord& lhs, const Coord& rhs) {
+	if(lhs.x==rhs.x && lhs.y==rhs.y)
+		return true;
+	return false;
+}
+
+bool isLocalMaxima(const Coord& a, const Coord& b, const Coord& titikPotong) {
+	return ((titikPotong.y<a.y && titikPotong.y<b.y) || (titikPotong.y>a.y && titikPotong.y>b.y));
+}
+
 vector<Coord> intersectionGenerator(int y, vector<Coord> polygon){
 	vector<Coord> intersectionPoint;
-	
+	Coord prevTipot = coord(-9999,-9999);
 	for(int i = 0; i < polygon.size(); i++){
 		if(i == polygon.size() - 1){
 			if(isInBetween(polygon.at(i).y, polygon.at(0).y, y)){				
 				Coord a = coord(polygon.at(i).x, polygon.at(i).y);
 				Coord b = coord(polygon.at(0).x, polygon.at(0).y);
-				
-				intersectionPoint.push_back(intersection(a, b, y));
+						
+				Coord titikPotong = intersection(a, b, y);
+
+				if(titikPotong==b){
+					if(isLocalMaxima(polygon.at(i), polygon.at(1), titikPotong))
+						intersectionPoint.push_back(titikPotong);
+				}
+				else {
+					if(prevTipot==titikPotong){
+						if(isLocalMaxima(polygon.at(i-1), polygon.at(0), titikPotong))
+							intersectionPoint.push_back(titikPotong);
+					}
+					else
+						intersectionPoint.push_back(titikPotong);
+				}
 			}
 		}else{
 			if(isInBetween(polygon.at(i).y, polygon.at(i + 1).y, y)){
 				Coord a = coord(polygon.at(i).x, polygon.at(i).y);
 				Coord b = coord(polygon.at(i + 1).x, polygon.at(i + 1).y);
 				
-				intersectionPoint.push_back(intersection(a, b, y));
+				Coord titikPotong = intersection(a, b, y);
+
+				// Jika sama dgn tipot sebelumnya, cek apakah local minima/maxima
+				if(titikPotong==prevTipot) {
+					Coord z = coord(polygon.at(i-1).x, polygon.at(i-1).y);
+					if(isLocalMaxima(z, b, titikPotong)) {
+						intersectionPoint.push_back(titikPotong);
+					}
+				}
+				else {
+					intersectionPoint.push_back(titikPotong);
+				}
+				prevTipot = intersectionPoint.back();
 			}
 		}
 	}
