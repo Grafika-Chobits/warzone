@@ -707,7 +707,58 @@ void drawWalkingStickman(Frame *frame, Coord center, RGB color){
 		plotLine(frame, leftUpperLegEndPoint.x, leftUpperLegEndPoint.y, leftLowerLegEndPoint.x, leftLowerLegEndPoint.y, color);
 	}
 }
+void drawBaling(Frame *frm , Coord loc,int x1,int x2,int x3,int x4,int y1,int y2,int y3,int y4 ,RGB color){
+	plotCircle(frm,loc.x,loc.y,15,color);
+	plotLine(frm,loc.x,loc.y,x1,y1,color);
+	plotLine(frm,loc.x,loc.y,x2,y2,color);
+	plotLine(frm,x1,y1,x2,y2,color);
+	
+	plotLine(frm,loc.x,loc.y,x3,y3,color);
+	plotLine(frm,loc.x,loc.y,x4,y4,color);
+	plotLine(frm,x3,y3,x4,y4,color);}
 
+int rotasiX(int xAwal,int yAwal,Coord loc,int sudut){
+	return ((xAwal-loc.x)*cos(sudut)-(yAwal-loc.y)*sin(sudut)+loc.x);}
+
+int rotasiY(int xAwal,int yAwal,Coord loc,int sudut){
+	return ((xAwal-loc.x)*sin(sudut)+(yAwal-loc.y)*cos(sudut)+loc.y);}		
+			
+void rotateBaling(Frame *frm,Coord loc, RGB col ,int counter ){
+	int x1=loc.x+40; int y1=loc.y+5;
+	int x2=loc.x+40; int y2=loc.y-5;
+	int x3=loc.x-40; int y3=loc.y+5;
+	int x4=loc.x-40; int y4=loc.y-5;
+	
+	int temp;
+	temp=rotasiX(x1,y1,loc,counter*10);
+	y1=rotasiY(x1,y1,loc,counter*10);
+	x1=temp;
+	temp=rotasiX(x2,y2,loc,counter*10);
+	y2=rotasiY(x2,y2,loc,counter*10);
+	x2=temp;
+	temp=rotasiX(x3,y3,loc,counter*10);	
+	y3=rotasiY(x3,y3,loc,counter*10);
+	x3=temp;
+	temp=rotasiX(x4,y4,loc,counter*10);
+	y4=rotasiY(x4,y4,loc,counter*10);
+	x4=temp;
+	drawBaling(frm,loc,x1,x2,x3,x4,y1,y2,y3,y4,col);
+}
+		
+
+
+void drawBrokenBaling(Frame *frm, Coord loc, RGB color){
+	
+	plotCircle(frm,loc.x+30,loc.y+25,15,color);
+	plotLine(frm,loc.x+30,loc.y,loc.x+70,loc.y+5,color);
+	plotLine(frm,loc.x+30,loc.y,loc.x+70,loc.y-5,color);
+	plotLine(frm,loc.x+70,loc.y+5,loc.x+70,loc.y-5,color);
+	
+	plotLine(frm,loc.x+20,loc.y,loc.x,loc.y+5,color);
+	plotLine(frm,loc.x+20,loc.y,loc.x,loc.y-5,color);
+	plotLine(frm,loc.x,loc.y+5,loc.x,loc.y-5,color);	
+	}
+	
 /* MAIN FUNCTION ------------------------------------------------------- */
 int main() {	
 	/* Preparations ---------------------------------------------------- */
@@ -805,6 +856,7 @@ int main() {
 	int chuteX = 400;
 	int chuteY = 50;
 	int stickmanX = 1150;
+	int balingCounter=0;
 	
 	/* Main Loop ------------------------------------------------------- */
 	
@@ -824,6 +876,9 @@ int main() {
 		drawParachute(&canvas, coord(chuteX+=4, chuteY+=1), rgb(99, 99, 99), 300);
 		
 		drawWalkingStickman(&canvas, coord(stickmanX-=4, 503), rgb(99, 99, 99));
+		
+		rotateBaling(&canvas,coord(200,200),rgb(255,255,255),balingCounter++);
+		drawBrokenBaling(&canvas,coord(300,300),rgb(255,255,255));
 		
 		// stickman ammunition
 		/*if(isFirstAmmunitionReleased){
