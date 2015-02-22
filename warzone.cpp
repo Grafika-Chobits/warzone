@@ -492,12 +492,14 @@ void drawWalkingStickman(Frame *frame, Coord center, RGB color){
 	int leftUpperLegLength = 30;
 	int leftLowerLegLength = 20;
 	
+	static int centerPositionY = center.y;
+	
 	// head
-	plotCircle(frame, center.x, center.y - 20, 20, color);
+	plotCircle(frame, center.x, centerPositionY - 20, 20, color);
 	
 	// body	
-	Coord bodyEndPoint = lengthEndPoint(coord(center.x, center.y), 88, bodyLength);
-	plotLine(frame, center.x, center.y, bodyEndPoint.x, bodyEndPoint.y, color);
+	Coord bodyEndPoint = lengthEndPoint(coord(center.x, centerPositionY), 88, bodyLength);
+	plotLine(frame, center.x, centerPositionY, bodyEndPoint.x, bodyEndPoint.y, color);
 	
 	// right upper arm
 	Coord rightUpperArmEndPoint;
@@ -519,8 +521,8 @@ void drawWalkingStickman(Frame *frame, Coord center, RGB color){
 			rightUpperArmRotation += 5;
 		}
 		
-		rightUpperArmEndPoint = lengthEndPoint(coord(center.x, center.y), rightUpperArmRotation, rightUpperArmLength);
-		plotLine(frame, center.x, center.y, rightUpperArmEndPoint.x, rightUpperArmEndPoint.y, color);
+		rightUpperArmEndPoint = lengthEndPoint(coord(center.x, centerPositionY), rightUpperArmRotation, rightUpperArmLength);
+		plotLine(frame, center.x, centerPositionY, rightUpperArmEndPoint.x, rightUpperArmEndPoint.y, color);
 	}
 	
 	// right lower arm
@@ -547,8 +549,8 @@ void drawWalkingStickman(Frame *frame, Coord center, RGB color){
 			leftUpperArmRotation -= 5;
 		}
 		
-		leftUpperArmEndPoint = lengthEndPoint(coord(center.x, center.y), leftUpperArmRotation, leftUpperArmLength);
-		plotLine(frame, center.x, center.y, leftUpperArmEndPoint.x, leftUpperArmEndPoint.y, color);
+		leftUpperArmEndPoint = lengthEndPoint(coord(center.x, centerPositionY), leftUpperArmRotation, leftUpperArmLength);
+		plotLine(frame, center.x, centerPositionY, leftUpperArmEndPoint.x, leftUpperArmEndPoint.y, color);
 	}
 	
 	// left lower arm
@@ -601,6 +603,13 @@ void drawWalkingStickman(Frame *frame, Coord center, RGB color){
 		}else{
 			if(!moveBackwardLeg){
 				rightLowerLegRotation += 10;
+				if(centerPositionY <= center.y + 1){
+					centerPositionY++;
+				}
+			}else{
+				if(centerPositionY > center.y){
+					centerPositionY--;
+				}
 			}
 		}
 
@@ -654,6 +663,13 @@ void drawWalkingStickman(Frame *frame, Coord center, RGB color){
 		}else{
 			if(moveForwardLeg){
 				leftLowerLegRotation += 10;
+				if(centerPositionY <= center.y + 1){
+					centerPositionY++;
+				}
+			}else{
+				if(centerPositionY > center.y){
+					centerPositionY--;
+				}
 			}
 		}
 		
@@ -777,7 +793,7 @@ int main() {
 		
 		drawParachute(&canvas, coord(chuteX+=4, chuteY+=1), rgb(99, 99, 99), 300);
 		
-		drawWalkingStickman(&canvas, coord(stickmanX -= 5, 503), rgb(99, 99, 99));
+		drawWalkingStickman(&canvas, coord(stickmanX-=4, 503), rgb(99, 99, 99));
 		
 		// stickman ammunition
 		/*if(isFirstAmmunitionReleased){
