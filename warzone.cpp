@@ -1,3 +1,14 @@
+/* Raw Graphics Demonstrator Main Program
+ * Computer Graphics Group "Chobits"
+ * 
+ * NOTES:
+ * http://www.ummon.eu/Linux/API/Devices/framebuffer.html
+ * 
+ * TODOS:
+ * - make dedicated canvas frame handler (currently the canvas frame is actually screen-sized)
+ * 
+ */
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -14,16 +25,15 @@
 #include <algorithm>
 #include <iostream>
 
+#define min(X,Y) (((X) < (Y)) ? (X) : (Y))
+#define max(X,Y) (((X) > (Y)) ? (X) : (Y))
+
+
 /* SETTINGS ------------------------------------------------------------ */
 #define screenXstart 250
 #define screenX 1366
 #define screenY 768
 #define mouseSensitivity 1
-
-#define min(X,Y) (((X) < (Y)) ? (X) : (Y))
-#define max(X,Y) (((X) > (Y)) ? (X) : (Y))
-
-#define PI 3.14159265
 
 using namespace std;
 
@@ -54,7 +64,6 @@ typedef struct s_frameBuffer {
 	int lineLen;
 	int bpp;
 } FrameBuffer;
-
 
 
 /* MATH STUFF ---------------------------------------------------------- */
@@ -223,6 +232,53 @@ void plotLine(Frame* frm, int x0, int y0, int x1, int y1, RGB lineColor)
 	}
 }
 
+void plotLineWidth(Frame* frm, int x0, int y0, int x1, int y1, float wd, RGB lineColor) { 
+	int dx = abs(x1-x0), sx = x0 < x1 ? 1 : -1; 
+	int dy = abs(y1-y0), sy = y0 < y1 ? 1 : -1; 
+	int err = dx-dy, e2, x2, y2;                          /* error value e_xy */
+
+	float ed = dx+dy == 0 ? 1 : sqrt((float)dx*dx+(float)dy*dy);
+
+	for (wd = (wd+1)/2; ; ) {                                   /* pixel loop */
+		insertPixel(frm, coord(x0, y0), rgb(max(0,lineColor.r*(abs(err-dx+dy)/ed-wd+1)), 
+											max(0,lineColor.g*(abs(err-dx+dy)/ed-wd+1)), 
+											max(0,lineColor.b*(abs(err-dx+dy)/ed-wd+1))));
+
+		e2 = err; x2 = x0;
+		if (2*e2 >= -dx) {                                           /* x step */
+			for (e2 += dy, y2 = y0; e2 < ed*wd && (y1 != y2 || dx > dy); e2 += dx)
+				y2 += sy;
+				insertPixel(frm, coord(x0, y2), rgb(max(0,lineColor.r*(abs(e2)/ed-wd+1)), 
+															max(0,lineColor.g*(abs(e2)/ed-wd+1)), 
+															max(0,lineColor.b*(abs(e2)/ed-wd+1)))); 
+			if (x0 == x1) break;
+			e2 = err; err -= dy; x0 += sx; 
+		} 
+		
+		if (2*e2 <= dy) {                                            /* y step */
+			for (e2 = dx-e2; e2 < ed*wd && (x1 != x2 || dx < dy); e2 += dy)
+				x2 += sx;
+				insertPixel(frm, coord(x2, y0), rgb(max(0,lineColor.r*(abs(e2)/ed-wd+1)), 
+															max(0,lineColor.g*(abs(e2)/ed-wd+1)), 
+															max(0,lineColor.b*(abs(e2)/ed-wd+1)))); 
+			if (y0 == y1) break;
+			err += dx; y0 += sy; 
+		}
+	}
+}
+
+vector<Coord> getBirdCoordinate(Coord center) {
+	vector<Coord> birdCoord;
+
+	birdCoord.push_back(coord(center.x, center.y));
+	birdCoord.push_back(coord(birdCoord.at(0).x+10, birdCoord.at(0).y-5));
+	birdCoord.push_back(coord(birdCoord.at(1).x+13, birdCoord.at(1).y+7));
+	birdCoord.push_back(coord(birdCoord.at(2).x-10, birdCoord.at(2).y+5));
+	birdCoord.push_back(coord(birdCoord.at(3).x-10, birdCoord.at(3).y-5));
+
+	return birdCoord;
+}
+
 /* FUNCTIONS FOR SCANLINE ALGORITHM ---------------------------------------------------- */
 
 bool isSlopeEqualsZero(int y0, int y1){
@@ -264,58 +320,23 @@ bool compareSameAxis(const s_coord &a, const s_coord &b){
 	return a.x == b.x;
 }
 
-bool operator==(const Coord& lhs, const Coord& rhs) {
-	if(lhs.x==rhs.x && lhs.y==rhs.y)
-		return true;
-	return false;
-}
-
-bool isLocalMaxima(const Coord& a, const Coord& b, const Coord& titikPotong) {
-	return ((titikPotong.y<a.y && titikPotong.y<b.y) || (titikPotong.y>a.y && titikPotong.y>b.y));
-}
-
 vector<Coord> intersectionGenerator(int y, vector<Coord> polygon){
 	vector<Coord> intersectionPoint;
-	Coord prevTipot = coord(-9999,-9999);
+	
 	for(int i = 0; i < polygon.size(); i++){
 		if(i == polygon.size() - 1){
 			if(isInBetween(polygon.at(i).y, polygon.at(0).y, y)){				
 				Coord a = coord(polygon.at(i).x, polygon.at(i).y);
 				Coord b = coord(polygon.at(0).x, polygon.at(0).y);
-						
-				Coord titikPotong = intersection(a, b, y);
-
-				if(titikPotong==b){
-					if(isLocalMaxima(polygon.at(i), polygon.at(1), titikPotong))
-						intersectionPoint.push_back(titikPotong);
-				}
-				else {
-					if(prevTipot==titikPotong){
-						if(isLocalMaxima(polygon.at(i-1), polygon.at(0), titikPotong))
-							intersectionPoint.push_back(titikPotong);
-					}
-					else
-						intersectionPoint.push_back(titikPotong);
-				}
+				
+				intersectionPoint.push_back(intersection(a, b, y));
 			}
 		}else{
 			if(isInBetween(polygon.at(i).y, polygon.at(i + 1).y, y)){
 				Coord a = coord(polygon.at(i).x, polygon.at(i).y);
 				Coord b = coord(polygon.at(i + 1).x, polygon.at(i + 1).y);
 				
-				Coord titikPotong = intersection(a, b, y);
-
-				// Jika sama dgn tipot sebelumnya, cek apakah local minima/maxima
-				if(titikPotong==prevTipot) {
-					Coord z = coord(polygon.at(i-1).x, polygon.at(i-1).y);
-					if(isLocalMaxima(z, b, titikPotong)) {
-						intersectionPoint.push_back(titikPotong);
-					}
-				}
-				else {
-					intersectionPoint.push_back(titikPotong);
-				}
-				prevTipot = intersectionPoint.back();
+				intersectionPoint.push_back(intersection(a, b, y));
 			}
 		}
 	}
@@ -362,6 +383,43 @@ void drawPeluru(Frame *frame, Coord center, RGB color)
 	
 	//DrawUjungKanan
 	plotLine(frame, center.x + 3, center.y - panjangPeluru / 2, center.x, center.y - (panjangPeluru / 2 + 4), color);
+}
+void drawBaling(Frame *frm , Coord loc,int x1,int x2,int x3,int x4,int y1,int y2,int y3,int y4 ,RGB color){
+	plotCircle(frm,loc.x,loc.y,15,color);
+	plotLine(frm,loc.x,loc.y,x1,y1,color);
+	plotLine(frm,loc.x,loc.y,x2,y2,color);
+	plotLine(frm,x1,y1,x2,y2,color);
+	
+	plotLine(frm,loc.x,loc.y,x3,y3,color);
+	plotLine(frm,loc.x,loc.y,x4,y4,color);
+	plotLine(frm,x3,y3,x4,y4,color);}
+
+int rotasiX(int xAwal,int yAwal,Coord loc,int sudut){
+	return ((xAwal-loc.x)*cos(sudut)-(yAwal-loc.y)*sin(sudut)+loc.x);}
+
+int rotasiY(int xAwal,int yAwal,Coord loc,int sudut){
+	return ((xAwal-loc.x)*sin(sudut)+(yAwal-loc.y)*cos(sudut)+loc.y);}		
+			
+void rotateBaling(Frame *frm,Coord loc, RGB col ,int counter ){
+	int x1=loc.x+40; int y1=loc.y+5;
+	int x2=loc.x+40; int y2=loc.y-5;
+	int x3=loc.x-40; int y3=loc.y+5;
+	int x4=loc.x-40; int y4=loc.y-5;
+	
+	int temp;
+	temp=rotasiX(x1,y1,loc,counter*10);
+	y1=rotasiY(x1,y1,loc,counter*10);
+	x1=temp;
+	temp=rotasiX(x2,y2,loc,counter*10);
+	y2=rotasiY(x2,y2,loc,counter*10);
+	x2=temp;
+	temp=rotasiX(x3,y3,loc,counter*10);	
+	y3=rotasiY(x3,y3,loc,counter*10);
+	x3=temp;
+	temp=rotasiX(x4,y4,loc,counter*10);
+	y4=rotasiY(x4,y4,loc,counter*10);
+	x4=temp;
+	drawBaling(frm,loc,x1,x2,x3,x4,y1,y2,y3,y4,col);
 }
 
 void drawPlane(Frame *frame, Coord position, RGB color) {
@@ -417,6 +475,11 @@ void drawPlane(Frame *frame, Coord position, RGB color) {
 	for(int i = -31; i <= height-31; i++){
 		vector<Coord> planeIntersectionPoint = intersectionGenerator(i, planeCoordinates);
 		
+		if(planeIntersectionPoint.size() % 2 != 0){
+			unique(planeIntersectionPoint.begin(), planeIntersectionPoint.end(), compareSameAxis);
+			planeIntersectionPoint.erase(planeIntersectionPoint.end() - 1);
+		}
+		
 		for(int j = 0; j < planeIntersectionPoint.size() - 1; j++){
 			if(j % 2 == 0){
 				int x0 = planeIntersectionPoint.at(j).x + xPlaneCoordinate;
@@ -428,6 +491,7 @@ void drawPlane(Frame *frame, Coord position, RGB color) {
 			}
 		}		
 	}
+	
 	
 }
 
@@ -470,280 +534,8 @@ void drawBomb(Frame *frame, Coord center, RGB color)
 	plotLine(frame, center.x + 3, center.y + panjangBomb / 2, center.x, center.y + (panjangBomb / 2 + 4), color);
 }
 
-void drawParachute(Frame *frame, Coord center, RGB color, int size){
-	int parachuteRadius = size;
-	int parachuteDiameter = parachuteRadius * 2;
-	
-	// parachute upper border
-	plotHalfCircle(frame, center.x, center.y, parachuteRadius, color);
-	
-	// parachute bottom border
-	plotHalfCircle(frame, center.x - parachuteDiameter / 3, center.y, parachuteRadius / 3, color);
-	plotHalfCircle(frame, center.x, center.y, parachuteRadius / 3, color);
-	plotHalfCircle(frame, center.x + parachuteDiameter / 3, center.y, parachuteRadius / 3, color);
-	
-	// parachute string
-	plotLine(frame, center.x - parachuteRadius, center.y, center.x - parachuteRadius / 6, center.y + parachuteRadius, color); // left
-	plotLine(frame, center.x + parachuteRadius, center.y, center.x + parachuteRadius / 6, center.y + parachuteRadius, color); // right
-	
-	// stickman
-	plotCircle(frame, center.x, center.y + parachuteRadius - parachuteRadius / 12, parachuteRadius / 12, color); //head
-	
-	int bodyStartingPoint = center.y + parachuteRadius - parachuteRadius / 10 + parachuteRadius / 10;
-	plotLine(frame, center.x, bodyStartingPoint, center.x, bodyStartingPoint + parachuteRadius / 5, color); // body
-	
-	int legStartingPoint = bodyStartingPoint + parachuteRadius / 5;
-	plotLine(frame, center.x, legStartingPoint, center.x + parachuteRadius / 13, legStartingPoint + parachuteRadius / 10, color); // right leg
-	plotLine(frame, center.x, legStartingPoint, center.x - parachuteRadius / 13, legStartingPoint + parachuteRadius / 10, color); // left leg
-	
-	plotLine(frame, center.x, bodyStartingPoint, center.x - parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, color);
-	plotLine(frame, center.x, bodyStartingPoint, center.x + parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, color);
-	plotLine(frame, center.x - parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, center.x - parachuteRadius / 6, center.y + parachuteRadius, color);
-	plotLine(frame, center.x + parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, center.x + parachuteRadius / 6, center.y + parachuteRadius, color);
-}
 
-Coord lengthEndPoint(Coord startingPoint, int degree, int length){
-	Coord endPoint;
-	
-	endPoint.x = int((double)length * cos((double)degree * PI / (double)180)) + startingPoint.x;
-	endPoint.y = int((double)length * sin((double)degree * PI / (double)180)) + startingPoint.y;
-	
-	return endPoint;
-}
 
-void drawWalkingStickman(Frame *frame, Coord center, RGB color){
-	int bodyLength = 50;
-	int rightUpperArmLength = 30;
-	int rightLowerArmLength = 20;
-	int leftUpperArmLength = 30;
-	int leftLowerArmLength = 20;
-	int rightUpperLegLength = 30;
-	int rightLowerLegLength = 20;
-	int leftUpperLegLength = 30;
-	int leftLowerLegLength = 20;
-	
-	static int centerPositionY = center.y;
-	
-	// head
-	plotCircle(frame, center.x, centerPositionY - 20, 20, color);
-	
-	// body	
-	Coord bodyEndPoint = lengthEndPoint(coord(center.x, centerPositionY), 88, bodyLength);
-	plotLine(frame, center.x, centerPositionY, bodyEndPoint.x, bodyEndPoint.y, color);
-	
-	// right upper arm
-	Coord rightUpperArmEndPoint;
-	static int rightUpperArmRotation = 125;
-	{
-		static int moveBackwardArm = 1;
-		
-		if(rightUpperArmRotation == 125){
-			moveBackwardArm = 1;
-		}
-		if(rightUpperArmRotation == 65){
-			moveBackwardArm = 0;
-		}
-		
-		
-		if(moveBackwardArm){
-			rightUpperArmRotation -= 5;
-		}else{
-			rightUpperArmRotation += 5;
-		}
-		
-		rightUpperArmEndPoint = lengthEndPoint(coord(center.x, centerPositionY), rightUpperArmRotation, rightUpperArmLength);
-		plotLine(frame, center.x, centerPositionY, rightUpperArmEndPoint.x, rightUpperArmEndPoint.y, color);
-	}
-	
-	// right lower arm
-	Coord rightLowerArmEndPoint = lengthEndPoint(coord(rightUpperArmEndPoint.x, rightUpperArmEndPoint.y), rightUpperArmRotation + 50, rightLowerArmLength);
-	plotLine(frame, rightUpperArmEndPoint.x, rightUpperArmEndPoint.y, rightLowerArmEndPoint.x, rightLowerArmEndPoint.y, color);
-	
-	// left upper arm
-	Coord leftUpperArmEndPoint;
-	static int leftUpperArmRotation = 65;
-	{
-		
-		static int moveForwardArm = 1;
-		
-		if(leftUpperArmRotation == 65){
-			moveForwardArm = 1;
-		}
-		if(leftUpperArmRotation == 125){
-			moveForwardArm = 0;
-		}
-		
-		if(moveForwardArm){
-			leftUpperArmRotation += 5;
-		}else{
-			leftUpperArmRotation -= 5;
-		}
-		
-		leftUpperArmEndPoint = lengthEndPoint(coord(center.x, centerPositionY), leftUpperArmRotation, leftUpperArmLength);
-		plotLine(frame, center.x, centerPositionY, leftUpperArmEndPoint.x, leftUpperArmEndPoint.y, color);
-	}
-	
-	// left lower arm
-	Coord leftLowerArmEndPoint = lengthEndPoint(coord(leftUpperArmEndPoint.x, leftUpperArmEndPoint.y), leftUpperArmRotation + 30, leftLowerArmLength);
-	plotLine(frame, leftUpperArmEndPoint.x, leftUpperArmEndPoint.y, leftLowerArmEndPoint.x, leftLowerArmEndPoint.y, color);
-	
-	// right upper leg
-	Coord rightUpperLegEndPoint;
-	static int rightUpperLegRotation = 125;
-	{
-		static int moveBackwardLeg = 1;
-		
-		if(rightUpperLegRotation == 125){
-			moveBackwardLeg = 1;
-		}
-		if(rightUpperLegRotation == 65){
-			moveBackwardLeg = 0;
-		}
-		
-		if(moveBackwardLeg){
-			rightUpperLegRotation -= 5;
-		}else{
-			rightUpperLegRotation += 5;
-		}
-		
-		rightUpperLegEndPoint = lengthEndPoint(coord(bodyEndPoint.x, bodyEndPoint.y), rightUpperLegRotation, rightUpperLegLength);
-		plotLine(frame, bodyEndPoint.x, bodyEndPoint.y, rightUpperLegEndPoint.x, rightUpperLegEndPoint.y, color);
-	}
-	
-	// right lower leg
-	{
-		static int rightLowerLegRotation = 95;
-		static int moveBackwardLeg = 1;
-		
-		if(rightUpperLegRotation == 125){
-			moveBackwardLeg = 1;
-			rightLowerLegRotation = 95;
-		}
-		if(rightUpperLegRotation == 65){
-			moveBackwardLeg = 0;
-			rightLowerLegRotation = 70;
-		}
-		
-		if(rightUpperLegRotation <= 90 ){
-			if(moveBackwardLeg){
-				rightLowerLegRotation = rightUpperLegRotation;
-			}else{
-				rightLowerLegRotation -= 5;
-			}
-		}else{
-			if(!moveBackwardLeg){
-				rightLowerLegRotation += 10;
-				if(centerPositionY <= center.y + 1){
-					centerPositionY++;
-				}
-			}else{
-				if(centerPositionY > center.y){
-					centerPositionY--;
-				}
-			}
-		}
-
-		Coord rightLowerLegEndPoint = lengthEndPoint(coord(rightUpperLegEndPoint.x, rightUpperLegEndPoint.y), rightLowerLegRotation, rightLowerLegLength);
-		plotLine(frame, rightUpperLegEndPoint.x, rightUpperLegEndPoint.y, rightLowerLegEndPoint.x, rightLowerLegEndPoint.y, color);
-	}
-	
-	// left upper leg
-	Coord leftUpperLegEndPoint;
-	static int leftUpperLegRotation = 65;
-	{
-		static int moveForwardLeg = 1;
-		
-		if(leftUpperLegRotation == 125){
-			moveForwardLeg = 0;
-		}
-		if(leftUpperLegRotation == 65){
-			moveForwardLeg = 1;
-		}
-		
-		if(moveForwardLeg){
-			leftUpperLegRotation += 5;
-		}else{
-			leftUpperLegRotation -= 5;
-		}
-		
-		leftUpperLegEndPoint = lengthEndPoint(coord(bodyEndPoint.x, bodyEndPoint.y), leftUpperLegRotation, leftUpperLegLength);
-		plotLine(frame, bodyEndPoint.x, bodyEndPoint.y, leftUpperLegEndPoint.x, leftUpperLegEndPoint.y, color);
-	}
-	
-	// left lower leg
-	{
-		static int leftLowerLegRotation = 70;
-		static int moveForwardLeg = 1;
-		
-		if(leftUpperLegRotation == 125){
-			moveForwardLeg = 0;
-			leftLowerLegRotation = 95;
-		}
-		if(leftUpperLegRotation == 65){
-			moveForwardLeg = 1;
-			leftLowerLegRotation = 70;
-		}
-		
-		if(leftUpperLegRotation <= 90 ){
-			if(moveForwardLeg){
-				leftLowerLegRotation -= 5;
-			}else{
-				leftLowerLegRotation = leftUpperLegRotation;
-			}
-		}else{
-			if(moveForwardLeg){
-				leftLowerLegRotation += 10;
-				if(centerPositionY <= center.y + 1){
-					centerPositionY++;
-				}
-			}else{
-				if(centerPositionY > center.y){
-					centerPositionY--;
-				}
-			}
-		}
-		
-		Coord leftLowerLegEndPoint = lengthEndPoint(coord(leftUpperLegEndPoint.x, leftUpperLegEndPoint.y), leftLowerLegRotation, leftLowerLegLength);
-		plotLine(frame, leftUpperLegEndPoint.x, leftUpperLegEndPoint.y, leftLowerLegEndPoint.x, leftLowerLegEndPoint.y, color);
-	}
-}
-void drawBaling(Frame *frm , Coord loc,int x1,int x2,int x3,int x4,int y1,int y2,int y3,int y4 ,RGB color){
-	plotCircle(frm,loc.x,loc.y,15,color);
-	plotLine(frm,loc.x,loc.y,x1,y1,color);
-	plotLine(frm,loc.x,loc.y,x2,y2,color);
-	plotLine(frm,x1,y1,x2,y2,color);
-	
-	plotLine(frm,loc.x,loc.y,x3,y3,color);
-	plotLine(frm,loc.x,loc.y,x4,y4,color);
-	plotLine(frm,x3,y3,x4,y4,color);}
-
-int rotasiX(int xAwal,int yAwal,Coord loc,int sudut){
-	return ((xAwal-loc.x)*cos(sudut)-(yAwal-loc.y)*sin(sudut)+loc.x);}
-
-int rotasiY(int xAwal,int yAwal,Coord loc,int sudut){
-	return ((xAwal-loc.x)*sin(sudut)+(yAwal-loc.y)*cos(sudut)+loc.y);}		
-			
-void rotateBaling(Frame *frm,Coord loc, RGB col ,int counter ){
-	int x1=loc.x+40; int y1=loc.y+5;
-	int x2=loc.x+40; int y2=loc.y-5;
-	int x3=loc.x-40; int y3=loc.y+5;
-	int x4=loc.x-40; int y4=loc.y-5;
-	
-	int temp;
-	temp=rotasiX(x1,y1,loc,counter*10);
-	y1=rotasiY(x1,y1,loc,counter*10);
-	x1=temp;
-	temp=rotasiX(x2,y2,loc,counter*10);
-	y2=rotasiY(x2,y2,loc,counter*10);
-	x2=temp;
-	temp=rotasiX(x3,y3,loc,counter*10);	
-	y3=rotasiY(x3,y3,loc,counter*10);
-	x3=temp;
-	temp=rotasiX(x4,y4,loc,counter*10);
-	y4=rotasiY(x4,y4,loc,counter*10);
-	x4=temp;
-	drawBaling(frm,loc,x1,x2,x3,x4,y1,y2,y3,y4,col);
-}
 		
 
 
@@ -759,6 +551,8 @@ void drawBrokenBaling(Frame *frm, Coord loc, RGB color){
 	plotLine(frm,loc.x,loc.y+5,loc.x,loc.y-5,color);	
 	}
 	
+
+
 /* MAIN FUNCTION ------------------------------------------------------- */
 int main() {	
 	/* Preparations ---------------------------------------------------- */
@@ -817,6 +611,7 @@ int main() {
 	int planeVelocity = 10;
 
 	int planeXPosition = canvasWidth;
+	int balingXPosition = planeXPosition+120;
 	int planeYPosition = 50;
 	int explosionMul = 0;
 	
@@ -851,11 +646,6 @@ int main() {
 	
 	int isXploded = 0;
 	Coord coordXplosion;
-	
-	int size = 25;
-	int chuteX = 400;
-	int chuteY = 50;
-	int stickmanX = 1150;
 	int balingCounter=0;
 	
 	/* Main Loop ------------------------------------------------------- */
@@ -873,13 +663,9 @@ int main() {
 		// draw plane
 		drawPlane(&canvas, coord(planeXPosition -= planeVelocity, planeYPosition), rgb(99, 99, 99));
 		
-		drawParachute(&canvas, coord(chuteX+=4, chuteY+=1), rgb(99, 99, 99), 300);
-		
-		drawWalkingStickman(&canvas, coord(stickmanX-=4, 503), rgb(99, 99, 99));
-		
-		rotateBaling(&canvas,coord(200,200),rgb(255,255,255),balingCounter++);
+		rotateBaling(&canvas,coord(balingXPosition -= planeVelocity,planeYPosition),rgb(255,255,255),balingCounter++);
+	
 		drawBrokenBaling(&canvas,coord(300,300),rgb(255,255,255));
-		
 		// stickman ammunition
 		/*if(isFirstAmmunitionReleased){
 			firstAmmunitionCoordinate.y-=ammunitionVelocity;
