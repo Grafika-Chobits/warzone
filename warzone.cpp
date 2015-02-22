@@ -28,6 +28,7 @@
 #define min(X,Y) (((X) < (Y)) ? (X) : (Y))
 #define max(X,Y) (((X) > (Y)) ? (X) : (Y))
 
+#define PI 3.14159265
 
 /* SETTINGS ------------------------------------------------------------ */
 #define screenXstart 250
@@ -188,6 +189,14 @@ void showCanvas(Frame* frm, Frame* cnvs, int canvasWidth, int canvasHeight, Coor
 			insertPixel(frm, coord(loc.x - canvasWidth/2 + x, loc.y - canvasHeight/2 + canvasHeight), borderColor);
 		}
 	}
+}
+
+int rotasiX(int xAwal,int yAwal,Coord loc,int sudut){
+	return ((xAwal-loc.x)*cos(sudut)-(yAwal-loc.y)*sin(sudut)+loc.x);
+}
+
+int rotasiY(int xAwal,int yAwal,Coord loc,int sudut){
+	return ((xAwal-loc.x)*sin(sudut)+(yAwal-loc.y)*cos(sudut)+loc.y);
 }
 
 void plotCircle(Frame* frm,int xm, int ym, int r,RGB col)
@@ -384,6 +393,54 @@ void drawPeluru(Frame *frame, Coord center, RGB color)
 	//DrawUjungKanan
 	plotLine(frame, center.x + 3, center.y - panjangPeluru / 2, center.x, center.y - (panjangPeluru / 2 + 4), color);
 }
+
+void drawPeluruForRotate(Frame *frame, Coord center, RGB color, int counter)
+{
+	int panjangPeluru = 25;
+	Coord kiriBawah 	= coord(center.x - 6, center.y + panjangPeluru / 2);
+	Coord kananBawah 	= coord(center.x +6, center.y + panjangPeluru / 2);
+	Coord kiriAtas 		= coord(center.x -6, center.y - panjangPeluru / 2);
+	Coord kananAtas		= coord(center.x + 6, center.y - panjangPeluru / 2);
+	Coord ujung			= coord(center.x, center.y - (panjangPeluru / 2 + 4));
+	
+	int temp;
+	
+	temp		=rotasiX(kiriBawah.x,kiriBawah.y,center,counter*10);
+	kiriBawah.y	=rotasiY(kiriBawah.x,kiriBawah.y,center,counter*10);
+	kiriBawah.x	=temp;
+	
+	temp		=rotasiX(kananBawah.x,kananBawah.y,center,counter*10);
+	kananBawah.y=rotasiY(kananBawah.x,kananBawah.y,center,counter*10);
+	kananBawah.x=temp;
+	
+	temp		=rotasiX(kiriAtas.x,kiriAtas.y,center,counter*10);
+	kiriAtas.y	=rotasiY(kiriAtas.x,kiriAtas.y,center,counter*10);
+	kiriAtas.x	=temp;
+	
+	temp		=rotasiX(kananAtas.x,kananAtas.y,center,counter*10);
+	kananAtas.y	=rotasiY(kananAtas.x,kananAtas.y,center,counter*10);
+	kananAtas.x	=temp;
+	
+	temp		=rotasiX(ujung.x,ujung.y,center,counter*10);
+	ujung.y		=rotasiY(ujung.x,ujung.y,center,counter*10);
+	ujung.x		=temp;
+	
+	//DrawKiri
+	plotLine(frame, kiriBawah.x, kiriBawah.y, kiriAtas.x, kiriAtas.y, color); 
+	
+	//DrawKanan
+	plotLine(frame, kananBawah.x, kananBawah.y, kananAtas.x, kananAtas.y, color);
+	
+	//DrawBawah
+	plotLine(frame, kiriBawah.x, kiriBawah.y, kananBawah.x, kananBawah.y, color);
+	
+	//DrawUjungKiri
+	plotLine(frame, kiriAtas.x, kiriAtas.y , ujung.x, ujung.y, color);
+	
+	//DrawUjungKanan
+	plotLine(frame, kananAtas.x, kananAtas.y, ujung.x, ujung.y, color);
+}
+
 void drawBaling(Frame *frm , Coord loc,int x1,int x2,int x3,int x4,int y1,int y2,int y3,int y4 ,RGB color){
 	plotCircle(frm,loc.x,loc.y,15,color);
 	plotLine(frm,loc.x,loc.y,x1,y1,color);
@@ -393,13 +450,7 @@ void drawBaling(Frame *frm , Coord loc,int x1,int x2,int x3,int x4,int y1,int y2
 	plotLine(frm,loc.x,loc.y,x3,y3,color);
 	plotLine(frm,loc.x,loc.y,x4,y4,color);
 	plotLine(frm,x3,y3,x4,y4,color);}
-
-int rotasiX(int xAwal,int yAwal,Coord loc,int sudut){
-	return ((xAwal-loc.x)*cos(sudut)-(yAwal-loc.y)*sin(sudut)+loc.x);}
-
-int rotasiY(int xAwal,int yAwal,Coord loc,int sudut){
-	return ((xAwal-loc.x)*sin(sudut)+(yAwal-loc.y)*cos(sudut)+loc.y);}		
-			
+				
 void rotateBaling(Frame *frm,Coord loc, RGB col ,int counter ){
 	int x1=loc.x+40; int y1=loc.y+5;
 	int x2=loc.x+40; int y2=loc.y-5;
@@ -422,6 +473,10 @@ void rotateBaling(Frame *frm,Coord loc, RGB col ,int counter ){
 	drawBaling(frm,loc,x1,x2,x3,x4,y1,y2,y3,y4,col);
 }
 
+void rotatePeluru(Frame *frm,Coord loc, RGB col ,int counter)
+{
+	
+}
 void drawPlane(Frame *frame, Coord position, RGB color) {
 
 	// Ship's relative coordinate to canvas, ship's actuator
@@ -534,11 +589,6 @@ void drawBomb(Frame *frame, Coord center, RGB color)
 	plotLine(frame, center.x + 3, center.y + panjangBomb / 2, center.x, center.y + (panjangBomb / 2 + 4), color);
 }
 
-
-
-		
-
-
 void drawBrokenBaling(Frame *frm, Coord loc, RGB color){
 	
 	plotCircle(frm,loc.x+30,loc.y+25,15,color);
@@ -549,16 +599,253 @@ void drawBrokenBaling(Frame *frm, Coord loc, RGB color){
 	plotLine(frm,loc.x+20,loc.y,loc.x,loc.y+5,color);
 	plotLine(frm,loc.x+20,loc.y,loc.x,loc.y-5,color);
 	plotLine(frm,loc.x,loc.y+5,loc.x,loc.y-5,color);	
-	}
-	
+}
 
-
+// Draw cannon di pojok kiri bawah
 void drawCannon(Frame *frame, Coord center, RGB color)
 {
 	plotCircle(frame, center.x, center.y, 100, color); //head
 	plotLine(frame, center.x, center.y -25, center.x + 80, center.y - 100, color);
 	plotLine(frame, center.x + 20, center.y, center.x + 100, center.y - 80, color);
 	plotCircle(frame, center.x + 90, center.y - 90, 12, color);
+}
+
+void drawParachute(Frame *frame, Coord center, RGB color, int size){
+	int parachuteRadius = size;
+	int parachuteDiameter = parachuteRadius * 2;
+	
+	// parachute upper border
+	plotHalfCircle(frame, center.x, center.y, parachuteRadius, color);
+	
+	// parachute bottom border
+	plotHalfCircle(frame, center.x - parachuteDiameter / 3, center.y, parachuteRadius / 3, color);
+	plotHalfCircle(frame, center.x, center.y, parachuteRadius / 3, color);
+	plotHalfCircle(frame, center.x + parachuteDiameter / 3, center.y, parachuteRadius / 3, color);
+	
+	// parachute string
+	plotLine(frame, center.x - parachuteRadius, center.y, center.x - parachuteRadius / 6, center.y + parachuteRadius, color); // left
+	plotLine(frame, center.x + parachuteRadius, center.y, center.x + parachuteRadius / 6, center.y + parachuteRadius, color); // right
+	
+	// stickman
+	plotCircle(frame, center.x, center.y + parachuteRadius - parachuteRadius / 12, parachuteRadius / 12, color); //head
+	
+	int bodyStartingPoint = center.y + parachuteRadius - parachuteRadius / 10 + parachuteRadius / 10;
+	plotLine(frame, center.x, bodyStartingPoint, center.x, bodyStartingPoint + parachuteRadius / 5, color); // body
+	
+	int legStartingPoint = bodyStartingPoint + parachuteRadius / 5;
+	plotLine(frame, center.x, legStartingPoint, center.x + parachuteRadius / 13, legStartingPoint + parachuteRadius / 10, color); // right leg
+	plotLine(frame, center.x, legStartingPoint, center.x - parachuteRadius / 13, legStartingPoint + parachuteRadius / 10, color); // left leg
+	
+	plotLine(frame, center.x, bodyStartingPoint, center.x - parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, color);
+	plotLine(frame, center.x, bodyStartingPoint, center.x + parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, color);
+	plotLine(frame, center.x - parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, center.x - parachuteRadius / 6, center.y + parachuteRadius, color);
+	plotLine(frame, center.x + parachuteRadius / 10, bodyStartingPoint + parachuteRadius / 10, center.x + parachuteRadius / 6, center.y + parachuteRadius, color);
+}
+
+Coord lengthEndPoint(Coord startingPoint, int degree, int length){
+	Coord endPoint;
+	
+	endPoint.x = int((double)length * cos((double)degree * PI / (double)180)) + startingPoint.x;
+	endPoint.y = int((double)length * sin((double)degree * PI / (double)180)) + startingPoint.y;
+	
+	return endPoint;
+}
+
+void drawWalkingStickman(Frame *frame, Coord center, RGB color){
+	int bodyLength = 50;
+	int rightUpperArmLength = 30;
+	int rightLowerArmLength = 20;
+	int leftUpperArmLength = 30;
+	int leftLowerArmLength = 20;
+	int rightUpperLegLength = 30;
+	int rightLowerLegLength = 20;
+	int leftUpperLegLength = 30;
+	int leftLowerLegLength = 20;
+	
+	static int centerPositionY = center.y;
+	
+	// head
+	plotCircle(frame, center.x, centerPositionY - 20, 20, color);
+	
+	// body	
+	Coord bodyEndPoint = lengthEndPoint(coord(center.x, centerPositionY), 88, bodyLength);
+	plotLine(frame, center.x, centerPositionY, bodyEndPoint.x, bodyEndPoint.y, color);
+	
+	// right upper arm
+	Coord rightUpperArmEndPoint;
+	static int rightUpperArmRotation = 125;
+	{
+		static int moveBackwardArm = 1;
+		
+		if(rightUpperArmRotation == 125){
+			moveBackwardArm = 1;
+		}
+		if(rightUpperArmRotation == 65){
+			moveBackwardArm = 0;
+		}
+		
+		
+		if(moveBackwardArm){
+			rightUpperArmRotation -= 5;
+		}else{
+			rightUpperArmRotation += 5;
+		}
+		
+		rightUpperArmEndPoint = lengthEndPoint(coord(center.x, centerPositionY), rightUpperArmRotation, rightUpperArmLength);
+		plotLine(frame, center.x, centerPositionY, rightUpperArmEndPoint.x, rightUpperArmEndPoint.y, color);
+	}
+	
+	// right lower arm
+	Coord rightLowerArmEndPoint = lengthEndPoint(coord(rightUpperArmEndPoint.x, rightUpperArmEndPoint.y), rightUpperArmRotation + 50, rightLowerArmLength);
+	plotLine(frame, rightUpperArmEndPoint.x, rightUpperArmEndPoint.y, rightLowerArmEndPoint.x, rightLowerArmEndPoint.y, color);
+	
+	// left upper arm
+	Coord leftUpperArmEndPoint;
+	static int leftUpperArmRotation = 65;
+	{
+		
+		static int moveForwardArm = 1;
+		
+		if(leftUpperArmRotation == 65){
+			moveForwardArm = 1;
+		}
+		if(leftUpperArmRotation == 125){
+			moveForwardArm = 0;
+		}
+		
+		if(moveForwardArm){
+			leftUpperArmRotation += 5;
+		}else{
+			leftUpperArmRotation -= 5;
+		}
+		
+		leftUpperArmEndPoint = lengthEndPoint(coord(center.x, centerPositionY), leftUpperArmRotation, leftUpperArmLength);
+		plotLine(frame, center.x, centerPositionY, leftUpperArmEndPoint.x, leftUpperArmEndPoint.y, color);
+	}
+	
+	// left lower arm
+	Coord leftLowerArmEndPoint = lengthEndPoint(coord(leftUpperArmEndPoint.x, leftUpperArmEndPoint.y), leftUpperArmRotation + 30, leftLowerArmLength);
+	plotLine(frame, leftUpperArmEndPoint.x, leftUpperArmEndPoint.y, leftLowerArmEndPoint.x, leftLowerArmEndPoint.y, color);
+	
+	// right upper leg
+	Coord rightUpperLegEndPoint;
+	static int rightUpperLegRotation = 125;
+	{
+		static int moveBackwardLeg = 1;
+		
+		if(rightUpperLegRotation == 125){
+			moveBackwardLeg = 1;
+		}
+		if(rightUpperLegRotation == 65){
+			moveBackwardLeg = 0;
+		}
+		
+		if(moveBackwardLeg){
+			rightUpperLegRotation -= 5;
+		}else{
+			rightUpperLegRotation += 5;
+		}
+		
+		rightUpperLegEndPoint = lengthEndPoint(coord(bodyEndPoint.x, bodyEndPoint.y), rightUpperLegRotation, rightUpperLegLength);
+		plotLine(frame, bodyEndPoint.x, bodyEndPoint.y, rightUpperLegEndPoint.x, rightUpperLegEndPoint.y, color);
+	}
+	
+	// right lower leg
+	{
+		static int rightLowerLegRotation = 95;
+		static int moveBackwardLeg = 1;
+		
+		if(rightUpperLegRotation == 125){
+			moveBackwardLeg = 1;
+			rightLowerLegRotation = 95;
+		}
+		if(rightUpperLegRotation == 65){
+			moveBackwardLeg = 0;
+			rightLowerLegRotation = 70;
+		}
+		
+		if(rightUpperLegRotation <= 90 ){
+			if(moveBackwardLeg){
+				rightLowerLegRotation = rightUpperLegRotation;
+			}else{
+				rightLowerLegRotation -= 5;
+			}
+		}else{
+			if(!moveBackwardLeg){
+				rightLowerLegRotation += 10;
+				if(centerPositionY <= center.y + 1){
+					centerPositionY++;
+				}
+			}else{
+				if(centerPositionY > center.y){
+					centerPositionY--;
+				}
+			}
+		}
+
+		Coord rightLowerLegEndPoint = lengthEndPoint(coord(rightUpperLegEndPoint.x, rightUpperLegEndPoint.y), rightLowerLegRotation, rightLowerLegLength);
+		plotLine(frame, rightUpperLegEndPoint.x, rightUpperLegEndPoint.y, rightLowerLegEndPoint.x, rightLowerLegEndPoint.y, color);
+	}
+	
+	// left upper leg
+	Coord leftUpperLegEndPoint;
+	static int leftUpperLegRotation = 65;
+	{
+		static int moveForwardLeg = 1;
+		
+		if(leftUpperLegRotation == 125){
+			moveForwardLeg = 0;
+		}
+		if(leftUpperLegRotation == 65){
+			moveForwardLeg = 1;
+		}
+		
+		if(moveForwardLeg){
+			leftUpperLegRotation += 5;
+		}else{
+			leftUpperLegRotation -= 5;
+		}
+		
+		leftUpperLegEndPoint = lengthEndPoint(coord(bodyEndPoint.x, bodyEndPoint.y), leftUpperLegRotation, leftUpperLegLength);
+		plotLine(frame, bodyEndPoint.x, bodyEndPoint.y, leftUpperLegEndPoint.x, leftUpperLegEndPoint.y, color);
+	}
+	
+	// left lower leg
+	{
+		static int leftLowerLegRotation = 70;
+		static int moveForwardLeg = 1;
+		
+		if(leftUpperLegRotation == 125){
+			moveForwardLeg = 0;
+			leftLowerLegRotation = 95;
+		}
+		if(leftUpperLegRotation == 65){
+			moveForwardLeg = 1;
+			leftLowerLegRotation = 70;
+		}
+		
+		if(leftUpperLegRotation <= 90 ){
+			if(moveForwardLeg){
+				leftLowerLegRotation -= 5;
+			}else{
+				leftLowerLegRotation = leftUpperLegRotation;
+			}
+		}else{
+			if(moveForwardLeg){
+				leftLowerLegRotation += 10;
+				if(centerPositionY <= center.y + 1){
+					centerPositionY++;
+				}
+			}else{
+				if(centerPositionY > center.y){
+					centerPositionY--;
+				}
+			}
+		}
+		
+		Coord leftLowerLegEndPoint = lengthEndPoint(coord(leftUpperLegEndPoint.x, leftUpperLegEndPoint.y), leftLowerLegRotation, leftLowerLegLength);
+		plotLine(frame, leftUpperLegEndPoint.x, leftUpperLegEndPoint.y, leftLowerLegEndPoint.x, leftLowerLegEndPoint.y, color);
+	}
 }
 
 /* MAIN FUNCTION ------------------------------------------------------- */
@@ -656,6 +943,10 @@ int main() {
 	Coord coordXplosion;
 	int balingCounter=0;
 	
+	int chuteX = 400;
+	int chuteY = 50;
+	int stickmanX = 1150;
+	
 	/* Main Loop ------------------------------------------------------- */
 	
 	while (loop) {
@@ -677,8 +968,9 @@ int main() {
 		
 		//draw new Cannon
 		drawCannon(&canvas, coord(0, canvasHeight), rgb(99, 99, 99));
+		drawPeluruForRotate(&canvas, coord(canvasWidth/2,canvasHeight/2), rgb(99, 99, 99), -15);
 		
-		rotateBaling(&canvas,coord(balingXPosition -= planeVelocity,planeYPosition),rgb(255,255,255),balingCounter++);
+		rotateBaling(&canvas,coord(balingXPosition -= planeVelocity,planeYPosition),rgb(255,255,255),balingCounter--);
 	
 		drawBrokenBaling(&canvas,coord(300,300),rgb(255,255,255));
 
