@@ -401,8 +401,8 @@ vector<Coord> combineIntersection(vector<Coord> a, vector<Coord> b){
 	return a;
 }
 
-void fillShape(Frame *frame, int xOffset, int yOffset, int shapeHeight, std::vector<Coord> shapeCoord, RGB color) {
-	for(int i = 0; i <= shapeHeight; i++){
+void fillShape(Frame *frame, int xOffset, int yOffset, int startY, int shapeHeight, std::vector<Coord> shapeCoord, RGB color) {
+	for(int i = startY; i <= shapeHeight; i++){
 		vector<Coord> shapeIntersectionPoint = intersectionGenerator(i, shapeCoord);	
 		for(int j = 0; j < shapeIntersectionPoint.size() - 1; j++){
 			if(j % 2 == 0){
@@ -633,7 +633,7 @@ void drawBaling(Frame *frm , Coord loc,int x1,int x2,int x3,int x4,int y1,int y2
 	}
 
 	int balingHeight = 80;
-	//fillShape(frm, 0, 0, balingHeight, balingCoordinates, color);
+	//fillShape(frm, loc.x, loc.y, loc.y-40, balingHeight, balingCoordinates, color);
 
 	// plotLine(frm,loc.x,loc.y,x1,y1,color);
 	// plotLine(frm,loc.x,loc.y,x2,y2,color);
@@ -720,7 +720,7 @@ void drawPlane(Frame *frame, Coord position, RGB color) {
 
 	// Coloring plane using scanline algorithm
 	int planeHeight = 65;
-	fillShape(frame, xPlaneCoordinate, yPlaneCoordinate, planeHeight, planeCoordinates, color);
+	fillShape(frame, xPlaneCoordinate, yPlaneCoordinate, 0, planeHeight, planeCoordinates, color);
 }
 
 void drawExplosion(Frame *frame, Coord loc, int mult, RGB color){	
@@ -1135,7 +1135,7 @@ int main() {
 			drawWalkingStickman(&canvas, coord(stickmanX -= 4, 503), rgb(99, 99, 99));
 		}
 		
-		rotateBaling(&canvas,coord(planeXPosition + 5,planeYPosition),rgb(255,255,255),balingCounter--);
+		rotateBaling(&canvas,coord(planeXPosition + 160,planeYPosition+10),rgb(255,255,255),balingCounter--);
 	
 		drawBrokenBaling(&canvas,coord(300,300),rgb(255,255,255));
 
