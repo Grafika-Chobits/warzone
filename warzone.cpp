@@ -743,6 +743,23 @@ void animateExplosion(Frame* frame, int explosionMul, Coord loc){
 	drawExplosion(frame, loc, explosionMul, rgb(explosionR, 0, 0));
 }
 
+void animateBan(Frame *frm, Coord *loc, RGB color, float *bVel, float *bVelX) {
+	int g = 1;
+	int tV = 1500;
+	float cB = 0.9;
+	if (*bVel < tV) {
+		*bVel = *bVel+g;
+	}
+	if (loc->y > 590) {
+		*bVel = (*bVel*-1);
+	}
+	*bVel = *bVel-(*bVel*0.03);
+	*bVelX = *bVelX-(*bVelX*0.03);
+	loc->x = loc->x+*bVelX;
+	loc->y = loc->y+*bVel;
+	plotCircle(frm,loc->x,loc->y,5,color);
+}
+
 void drawBomb(Frame *frame, Coord center, RGB color)
 {
 	int panjangBomb = 10;
@@ -1074,8 +1091,9 @@ int main() {
 	int shipYPosition = 598;
 
 	int planeXPosition = canvasWidth;
-	int balingXPosition = planeXPosition+120;
 	int planeYPosition = 50;
+	int balingXPosition = planeXPosition+120;
+	int balingYPosition = planeYPosition + 10;
 	int explosionMul = 0;
 	
 	// prepare ammunition
@@ -1103,6 +1121,13 @@ int main() {
 	int stickmanX = 1150;
 	int stickmanEncounter = 0;
 	int chutesize = 50;
+	int deployed = 0;
+	
+	float bVel = -5;
+	float bVelX = 5;
+	Coord coordBan;
+	coordBan.x = canvasWidth/2;
+	coordBan.y = canvasHeight/2;
 	
 	/* Main Loop ------------------------------------------------------- */
 	
@@ -1123,21 +1148,35 @@ int main() {
 		drawStickmanAndCannon(&canvas, coord(shipXPosition,shipYPosition), rgb(99,99,99), stickmanCounter++);
 		
 		// draw plane
-		drawPlane(&canvas, coord(planeXPosition -= planeVelocity, planeYPosition), rgb(99, 99, 99));
+		if(isXploded == 0)
+			drawPlane(&canvas, coord(planeXPosition -= planeVelocity, planeYPosition), rgb(99, 99, 99));
 		
 		if(chutesize <= 200){
 			chutesize++;
 		}
 		// draw parachute
-		drawParachute(&canvas, coord(chuteX+=4, chuteY+=1), rgb(99, 99, 99), chutesize);
+		if(isXploded){
+			deployed = 1;
+		}
+		if(deployed)
+		{
+			drawParachute(&canvas, coord(chuteX+=4, chuteY+=1), rgb(99, 99, 99), chutesize);
+			animateBan(&canvas, &coordBan, rgb(255, 99, 99), &bVel, &bVelX);
+		}
 		
 		if(stickmanEncounter){
 			drawWalkingStickman(&canvas, coord(stickmanX -= 4, 503), rgb(99, 99, 99));
 		}
-		
-		rotateBaling(&canvas,coord(planeXPosition + 160,planeYPosition+10),rgb(255,255,255),balingCounter--);
+		if(deployed)
+		{
+			rotateBaling(&canvas,coord(planeXPosition + 160,balingYPosition+=planeVelocity),rgb(255,255,255),balingCounter--);
+		}
+		else
+		{
+			rotateBaling(&canvas,coord(planeXPosition + 160,planeYPosition+10),rgb(255,255,255),balingCounter--);
+		}
 	
-		drawBrokenBaling(&canvas,coord(300,300),rgb(255,255,255));
+		//drawBrokenBaling(&canvas,coord(300,300),rgb(255,255,255));
 
 		// stickman ammunition
 		if(isFirstAmmunitionReleased){
@@ -1189,7 +1228,7 @@ int main() {
 			explosionMul++;
 			if(explosionMul >= 20){
 				explosionMul = 0;
-				isXploded = 0;
+				//isXploded = 0;
 			}
 		}
 		
