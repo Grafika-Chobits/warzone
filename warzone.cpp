@@ -365,6 +365,111 @@ vector<Coord> combineIntersection(vector<Coord> a, vector<Coord> b){
 	return a;
 }
 
+/* Function to draw ship */
+void drawShip(Frame *frame, Coord center, RGB color)
+{
+	// Ship's attributes
+	int panjangDekBawah = 100;
+	int deltaDekAtasBawah = 60;
+	int height = 40;
+	int jarakKeUjung = panjangDekBawah / 2 + deltaDekAtasBawah / 2;
+	
+	// Ship's relative coordinate to canvas, ship's actuator
+	int xShipCoordinate = center.x - jarakKeUjung;
+	int yShipCoordinate = center.y - height;
+	
+	// Ship's border coordinates
+	vector<Coord>  shipCoordinates;
+	
+	shipCoordinates.push_back(coord(0, 0));
+	shipCoordinates.push_back(coord(0 + jarakKeUjung + jarakKeUjung, 0));
+	shipCoordinates.push_back(coord(panjangDekBawah / 2 + panjangDekBawah / 2 + deltaDekAtasBawah/2, height));
+	shipCoordinates.push_back(coord(deltaDekAtasBawah/2, height));
+		
+	// Draw ship's border relative to canvas
+	for(int i = 0; i < shipCoordinates.size(); i++){
+		int x0, y0, x1, y1;
+		
+		if(i < shipCoordinates.size() - 1){
+			x0 = shipCoordinates.at(i).x + xShipCoordinate;
+			y0 = shipCoordinates.at(i).y + yShipCoordinate;
+			x1 = shipCoordinates.at(i + 1).x + xShipCoordinate;
+			y1 = shipCoordinates.at(i + 1).y + yShipCoordinate;
+		}else{
+			x0 = shipCoordinates.at(shipCoordinates.size() - 1).x + xShipCoordinate;
+			y0 = shipCoordinates.at(shipCoordinates.size() - 1).y + yShipCoordinate;
+			x1 = shipCoordinates.at(0).x + xShipCoordinate;
+			y1 = shipCoordinates.at(0).y + yShipCoordinate;
+		}
+		
+		plotLine(frame, x0, y0, x1, y1, color);
+	}
+	
+	// Coloring ship using scanline algorithm
+	for(int i = 1; i <= height; i++){
+		vector<Coord> shipIntersectionPoint = intersectionGenerator(i, shipCoordinates);
+
+		if(shipIntersectionPoint.size() % 2 != 0){
+			unique(shipIntersectionPoint.begin(), shipIntersectionPoint.end(), compareSameAxis);
+			shipIntersectionPoint.erase(shipIntersectionPoint.end() - 1);
+		}
+		
+		for(int j = 0; j < shipIntersectionPoint.size() - 1; j++){
+			if(j % 2 == 0){
+				int x0 = shipIntersectionPoint.at(j).x + xShipCoordinate;
+				int y0 = shipIntersectionPoint.at(j).y + yShipCoordinate;
+				int x1 = shipIntersectionPoint.at(j + 1).x + xShipCoordinate;
+				int y1 = shipIntersectionPoint.at(j + 1).y + yShipCoordinate;
+				
+				plotLine(frame, x0, y0, x1, y1, color);
+			}
+		}		
+	}	
+}
+
+void drawStickman(Frame* frm,Coord loc,int sel,RGB color,int counter){
+	plotCircle(frm,loc.x,loc.y,15,color);
+	plotLine(frm,loc.x,loc.y+15,loc.x,loc.y+50,color);
+	
+	if(counter % 2 == 0){
+		plotLine(frm,loc.x,loc.y+30,loc.x+20,loc.y+sel-3,color);
+		plotLine(frm,loc.x,loc.y+30,loc.x+25,loc.y+(sel+10)-3,color);
+	}else{
+		plotLine(frm,loc.x,loc.y+30,loc.x+20,loc.y+sel,color);
+		plotLine(frm,loc.x,loc.y+30,loc.x+25,loc.y+(sel+10),color);
+	}
+	
+	
+}
+
+void drawCannon(Frame* frm,Coord loc,RGB color){
+	plotLine(frm,loc.x-10,loc.y-10,loc.x-10,loc.y+30,color);
+	plotLine(frm,loc.x-10,loc.y+30,loc.x+10,loc.y+30,color);
+	plotLine(frm,loc.x+10,loc.y+30,loc.x+10,loc.y-10,color);
+	plotLine(frm,loc.x+10,loc.y-10,loc.x-10,loc.y-10,color);	
+	plotHalfCircle(frm,loc.x,loc.y-10,10,color);
+	loc.y=loc.y-20;
+	plotLine(frm,loc.x-5,loc.y-5,loc.x-5,loc.y+2,color);
+	//plotLine(loc.x-5,loc.y+5,loc.x+5,loc.y+5);
+	plotLine(frm,loc.x+5,loc.y+2,loc.x+5,loc.y-5,color);
+	plotLine(frm,loc.x+5,loc.y-5,loc.x-5,loc.y-5,color);	
+}
+
+void drawStickmanAndCannon(Frame *frame, Coord shipPosition, RGB color, int counter){
+	
+	if(counter % 2 == 0){
+		//Draw cannon
+		drawCannon(frame, coord(shipPosition.x, shipPosition.y - 80 - 3), rgb(99,99,99));
+	}else{
+		//Draw cannon
+		drawCannon(frame, coord(shipPosition.x, shipPosition.y - 80), rgb(99,99,99));
+	}
+		
+	//Draw stickman
+	drawStickman(frame, coord(shipPosition.x - 30, shipPosition.y - 90), 15, rgb(99,99,99),counter);
+}
+
+
 void drawAmmunition(Frame *frame, Coord upperBoundPosition, int ammunitionWidth, int ammunitionLength, RGB color){
 	plotLine(frame, upperBoundPosition.x, upperBoundPosition.y, upperBoundPosition.x, upperBoundPosition.y + ammunitionLength, color);
 	
@@ -599,15 +704,6 @@ void drawBrokenBaling(Frame *frm, Coord loc, RGB color){
 	plotLine(frm,loc.x+20,loc.y,loc.x,loc.y+5,color);
 	plotLine(frm,loc.x+20,loc.y,loc.x,loc.y-5,color);
 	plotLine(frm,loc.x,loc.y+5,loc.x,loc.y-5,color);	
-}
-
-// Draw cannon di pojok kiri bawah
-void drawCannon(Frame *frame, Coord center, RGB color)
-{
-	plotCircle(frame, center.x, center.y, 100, color); //head
-	plotLine(frame, center.x, center.y -25, center.x + 80, center.y - 100, color);
-	plotLine(frame, center.x + 20, center.y, center.x + 100, center.y - 80, color);
-	plotCircle(frame, center.x + 90, center.y - 90, 12, color);
 }
 
 void drawParachute(Frame *frame, Coord center, RGB color, int size){
@@ -902,8 +998,12 @@ int main() {
 	int canvasHeight = 600;
 	Coord canvasPosition = coord(screenX/2,screenY/2);
 		
-	// prepare plane
+	// prepare plane & ship
 	int planeVelocity = 10;
+	int shipVelocity = 5; // velocity (pixel/ loop)
+	
+	int shipXPosition = canvasWidth - 80;
+	int shipYPosition = 598;
 
 	int planeXPosition = canvasWidth;
 	int balingXPosition = planeXPosition+120;
@@ -911,7 +1011,7 @@ int main() {
 	int explosionMul = 0;
 	
 	// prepare ammunition
-	/*Coord firstAmmunitionCoordinate;
+	Coord firstAmmunitionCoordinate;
 	int isFirstAmmunitionReleased = 1;
 	Coord secondAmmunitionCoordinate;
 	int isSecondAmmunitionReleased = 0;
@@ -923,7 +1023,7 @@ int main() {
 	secondAmmunitionCoordinate.y = shipYPosition - 120;
 	
 	
-	//prepare Bomb
+	/*//prepare Bomb
 	Coord firstBombCoordinate;
 	int isFirstBombReleased = 1;
 	Coord secondBombCoordinate;
@@ -938,6 +1038,7 @@ int main() {
 	
 	int i; //for drawing.
 	int MoveLeft = 1;
+	int stickmanCounter = 0;
 	
 	int isXploded = 0;
 	Coord coordXplosion;
@@ -959,6 +1060,12 @@ int main() {
 		// clean canvas
 		flushFrame(&canvas, rgb(0,0,0));
 		
+		// draw ship
+		drawShip(&canvas, coord(shipXPosition,shipYPosition), rgb(99,99,99));
+		
+		// draw stickman and cannon
+		drawStickmanAndCannon(&canvas, coord(shipXPosition,shipYPosition), rgb(99,99,99), stickmanCounter++);
+		
 		// draw plane
 		drawPlane(&canvas, coord(planeXPosition -= planeVelocity, planeYPosition), rgb(99, 99, 99));
 		
@@ -966,16 +1073,12 @@ int main() {
 		
 		drawWalkingStickman(&canvas, coord(stickmanX-=4, 503), rgb(99, 99, 99));
 		
-		//draw new Cannon
-		drawCannon(&canvas, coord(0, canvasHeight), rgb(99, 99, 99));
-		drawPeluruForRotate(&canvas, coord(canvasWidth/2,canvasHeight/2), rgb(99, 99, 99), -15);
-		
 		rotateBaling(&canvas,coord(balingXPosition -= planeVelocity,planeYPosition),rgb(255,255,255),balingCounter--);
 	
 		drawBrokenBaling(&canvas,coord(300,300),rgb(255,255,255));
 
 		// stickman ammunition
-		/*if(isFirstAmmunitionReleased){
+		if(isFirstAmmunitionReleased){
 			firstAmmunitionCoordinate.y-=ammunitionVelocity;
 			
 			if(firstAmmunitionCoordinate.y <= canvasHeight/3 && !isSecondAmmunitionReleased){
@@ -1007,10 +1110,10 @@ int main() {
 			
 			drawPeluru(&canvas, secondAmmunitionCoordinate, rgb(99, 99, 99));
 			drawAmmunition(&canvas, secondAmmunitionCoordinate, 3, ammunitionLength, rgb(99, 99, 99));
-		}*/
+		}
 			
 		//explosion
-		/*if (isInBound(coord(firstAmmunitionCoordinate.x, firstAmmunitionCoordinate.y), coord(planeXPosition-5, planeYPosition-15), coord(planeXPosition+170, planeYPosition+15))) {
+		if (isInBound(coord(firstAmmunitionCoordinate.x, firstAmmunitionCoordinate.y), coord(planeXPosition-5, planeYPosition-15), coord(planeXPosition+170, planeYPosition+15))) {
 			coordXplosion = firstAmmunitionCoordinate;
 			isXploded = 1;
 			//printf("boom");
@@ -1019,7 +1122,7 @@ int main() {
 			isXploded = 1;
 			//printf("boom");
 		}
-		else if (isInBound(coord(firstBombCoordinate.x, firstBombCoordinate.y), coord(shipXPosition-50, shipYPosition-100), coord(shipXPosition+50, shipYPosition+30))) {
+		/*else if (isInBound(coord(firstBombCoordinate.x, firstBombCoordinate.y), coord(shipXPosition-50, shipYPosition-100), coord(shipXPosition+50, shipYPosition+30))) {
 			coordXplosion = firstBombCoordinate;
 			isXploded = 1;
 			//printf("boom");
@@ -1027,7 +1130,7 @@ int main() {
 			coordXplosion = secondBombCoordinate;
 			isXploded = 1;
 			//printf("boom");
-		}
+		}*/
 		if (isXploded == 1) {
 			animateExplosion(&canvas, explosionMul, coordXplosion);
 			explosionMul++;
@@ -1035,7 +1138,7 @@ int main() {
 				explosionMul = 0;
 				isXploded = 0;
 			}
-		}*/
+		}
 		
 		if(planeXPosition <= -170){
 			planeXPosition = canvasWidth;
@@ -1043,6 +1146,20 @@ int main() {
 		
 		if(planeXPosition == screenX/2 - canvasWidth/2 - 165){
 			planeXPosition = screenX/2 + canvasWidth/2;
+		}
+		
+		if(shipXPosition == 80){
+			MoveLeft = 0;
+		} 
+		
+		if(shipXPosition == canvasWidth - 80){
+			MoveLeft = 1;
+		} 
+		
+		if(MoveLeft){
+			shipXPosition -= shipVelocity;
+		}else{
+			shipXPosition += shipVelocity;
 		}
 		
 		//show frame
