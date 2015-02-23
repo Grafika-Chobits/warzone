@@ -30,6 +30,8 @@
 
 #define PI 3.14159265
 
+#define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0)
+
 /* SETTINGS ------------------------------------------------------------ */
 #define screenXstart 250
 #define screenX 1366
@@ -532,6 +534,11 @@ void drawPeluru(Frame *frame, Coord center, RGB color)
 	//DrawUjungKanan
 	plotLine(frame, center.x + 3, center.y - panjangPeluru / 2, center.x, center.y - (panjangPeluru / 2 + 4), color);
 }
+
+/* Coord moveTowards(Coord position, int angle, int speed)
+{
+	position.x = degreesToRadians
+}*/
 
 void drawPeluruForRotate(Frame *frame, Coord center, RGB color, int counter)
 {
@@ -1170,6 +1177,7 @@ int main() {
 		
 		if(planeXPosition <= -170){
 			planeXPosition = canvasWidth;
+			balingXPosition = canvasWidth + 120;
 		}
 		
 		if(planeXPosition == screenX/2 - canvasWidth/2 - 165){
