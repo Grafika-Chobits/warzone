@@ -401,6 +401,22 @@ vector<Coord> combineIntersection(vector<Coord> a, vector<Coord> b){
 	return a;
 }
 
+void fillShape(Frame *frame, int xOffset, int yOffset, int shapeHeight, std::vector<Coord> shapeCoord, RGB color) {
+	for(int i = 0; i <= shapeHeight; i++){
+		vector<Coord> shapeIntersectionPoint = intersectionGenerator(i, shapeCoord);	
+		for(int j = 0; j < shapeIntersectionPoint.size() - 1; j++){
+			if(j % 2 == 0){
+				int x0 = shapeIntersectionPoint.at(j).x + xOffset;
+				int y0 = shapeIntersectionPoint.at(j).y + yOffset;
+				int x1 = shapeIntersectionPoint.at(j + 1).x + xOffset;
+				int y1 = shapeIntersectionPoint.at(j + 1).y + yOffset;
+				
+				plotLine(frame, x0, y0, x1, y1, color);
+			}
+		}		
+	}
+}
+
 /* Function to draw ship */
 void drawShip(Frame *frame, Coord center, RGB color)
 {
@@ -588,14 +604,45 @@ void drawPeluruForRotate(Frame *frame, Coord center, RGB color, int counter)
 }
 
 void drawBaling(Frame *frm , Coord loc,int x1,int x2,int x3,int x4,int y1,int y2,int y3,int y4 ,RGB color){
+	int xOffset = loc.x-x1;
+	int yOffset = loc.y-y1;
+
 	plotCircle(frm,loc.x,loc.y,15,color);
-	plotLine(frm,loc.x,loc.y,x1,y1,color);
-	plotLine(frm,loc.x,loc.y,x2,y2,color);
-	plotLine(frm,x1,y1,x2,y2,color);
+	std::vector<Coord> balingCoordinates;
+	balingCoordinates.push_back(loc);
+	balingCoordinates.push_back(coord(x1, y1));
+	balingCoordinates.push_back(coord(x2, y2));
+	balingCoordinates.push_back(coord(x3,y3));
+	balingCoordinates.push_back(coord(x4,y4));
+
+	// Gambar baling-baling
+	for(int i = 0; i < balingCoordinates.size(); i++){
+		int x0, y0, x1, y1;
+		if(i < balingCoordinates.size() - 1){
+			x0 = balingCoordinates.at(i).x;
+			y0 = balingCoordinates.at(i).y;
+			x1 = balingCoordinates.at(i + 1).x;
+			y1 = balingCoordinates.at(i + 1).y;
+		}else{
+			x0 = balingCoordinates.at(balingCoordinates.size() - 1).x;
+			y0 = balingCoordinates.at(balingCoordinates.size() - 1).y;
+			x1 = balingCoordinates.at(0).x;
+			y1 = balingCoordinates.at(0).y;
+		}
+		plotLine(frm, x0, y0, x1, y1, color);
+	}
+
+	int balingHeight = 80;
+	//fillShape(frm, 0, 0, balingHeight, balingCoordinates, color);
+
+	// plotLine(frm,loc.x,loc.y,x1,y1,color);
+	// plotLine(frm,loc.x,loc.y,x2,y2,color);
+	// plotLine(frm,x1,y1,x2,y2,color);
 	
-	plotLine(frm,loc.x,loc.y,x3,y3,color);
-	plotLine(frm,loc.x,loc.y,x4,y4,color);
-	plotLine(frm,x3,y3,x4,y4,color);}
+	// plotLine(frm,loc.x,loc.y,x3,y3,rgb(255,0,0));
+	// plotLine(frm,loc.x,loc.y,x4,y4,color);
+	// plotLine(frm,x3,y3,x4,y4,color);
+}
 				
 void rotateBaling(Frame *frm,Coord loc, RGB col ,int counter ){
 	int x1=loc.x+40; int y1=loc.y+5;
@@ -631,7 +678,7 @@ void drawPlane(Frame *frame, Coord position, RGB color) {
 	
 	// Ship's border coordinates
 	vector<Coord>  planeCoordinates;
-	planeCoordinates.push_back(coord(0,0));
+	planeCoordinates.push_back(coord(0,31));
 	planeCoordinates.push_back(coord(planeCoordinates.at(0).x + 15, planeCoordinates.at(0).y-5));
 	planeCoordinates.push_back(coord(planeCoordinates.at(1).x + 30, planeCoordinates.at(1).y-3));
 	planeCoordinates.push_back(coord(planeCoordinates.at(2).x + 13, planeCoordinates.at(2).y-4));
@@ -671,23 +718,9 @@ void drawPlane(Frame *frame, Coord position, RGB color) {
 		plotLine(frame, x0, y0, x1, y1, color);
 	}
 
-	// Coloring ship using scanline algorithm
-	int height = 65;
-	for(int i = -31; i <= height-31; i++){
-		vector<Coord> planeIntersectionPoint = intersectionGenerator(i, planeCoordinates);
-		
-		
-		for(int j = 0; j < planeIntersectionPoint.size() - 1; j++){
-			if(j % 2 == 0){
-				int x0 = planeIntersectionPoint.at(j).x + xPlaneCoordinate;
-				int y0 = planeIntersectionPoint.at(j).y + yPlaneCoordinate;
-				int x1 = planeIntersectionPoint.at(j + 1).x + xPlaneCoordinate;
-				int y1 = planeIntersectionPoint.at(j + 1).y + yPlaneCoordinate;
-				
-				plotLine(frame, x0, y0, x1, y1, color);
-			}
-		}		
-	}
+	// Coloring plane using scanline algorithm
+	int planeHeight = 65;
+	fillShape(frame, xPlaneCoordinate, yPlaneCoordinate, planeHeight, planeCoordinates, color);
 }
 
 void drawExplosion(Frame *frame, Coord loc, int mult, RGB color){	
