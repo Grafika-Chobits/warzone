@@ -1048,21 +1048,7 @@ int main() {
 	
 	firstAmmunitionCoordinate.x = shipXPosition;
 	firstAmmunitionCoordinate.y = shipYPosition - 120;
-	secondAmmunitionCoordinate.y = shipYPosition - 120;
-	
-	
-	/*//prepare Bomb
-	Coord firstBombCoordinate;
-	int isFirstBombReleased = 1;
-	Coord secondBombCoordinate;
-	int isSecondBombReleased = 0;
-	int bombVelocity = 10;
-	int bombLength = 20;
-	
-	firstBombCoordinate.x = planeXPosition;
-	firstBombCoordinate.y = planeYPosition + 120;
-	secondBombCoordinate.y = planeYPosition - 120;*/
-	
+	secondAmmunitionCoordinate.y = shipYPosition - 120;	
 	
 	int i; //for drawing.
 	int MoveLeft = 1;
@@ -1089,7 +1075,7 @@ int main() {
 		flushFrame(&canvas, rgb(0,0,0));
 		
 		// draw ship
-		drawShip(&canvas, coord(shipXPosition,shipYPosition), rgb(99,99,99));
+		drawShip(&canvas, coord(shipXPosition -= shipVelocity,shipYPosition), rgb(99,99,99));
 		
 		// draw stickman and cannon
 		drawStickmanAndCannon(&canvas, coord(shipXPosition,shipYPosition), rgb(99,99,99), stickmanCounter++);
@@ -1097,9 +1083,10 @@ int main() {
 		// draw plane
 		drawPlane(&canvas, coord(planeXPosition -= planeVelocity, planeYPosition), rgb(99, 99, 99));
 		
+		// draw parachute
 		drawParachute(&canvas, coord(chuteX+=4, chuteY+=1), rgb(99, 99, 99), 300);
 		
-		drawWalkingStickman(&canvas, coord(stickmanX-=4, 503), rgb(99, 99, 99));
+		drawWalkingStickman(&canvas, coord(stickmanX -= 4, 503), rgb(99, 99, 99));
 		
 		rotateBaling(&canvas,coord(balingXPosition -= planeVelocity,planeYPosition),rgb(255,255,255),balingCounter--);
 	
@@ -1150,15 +1137,6 @@ int main() {
 			isXploded = 1;
 			//printf("boom");
 		}
-		/*else if (isInBound(coord(firstBombCoordinate.x, firstBombCoordinate.y), coord(shipXPosition-50, shipYPosition-100), coord(shipXPosition+50, shipYPosition+30))) {
-			coordXplosion = firstBombCoordinate;
-			isXploded = 1;
-			//printf("boom");
-		} else if (isInBound(coord(secondBombCoordinate.x, secondBombCoordinate.y), coord(shipXPosition-50, shipYPosition-100), coord(shipXPosition+50, shipYPosition+30))) {
-			coordXplosion = secondBombCoordinate;
-			isXploded = 1;
-			//printf("boom");
-		}*/
 		if (isXploded == 1) {
 			animateExplosion(&canvas, explosionMul, coordXplosion);
 			explosionMul++;
@@ -1176,18 +1154,16 @@ int main() {
 			planeXPosition = screenX/2 + canvasWidth/2;
 		}
 		
-		if(shipXPosition == 80){
-			MoveLeft = 0;
-		} 
+		if(shipXPosition <= -85){
+			shipXPosition = canvasWidth + 80;
+		}
 		
-		if(shipXPosition == canvasWidth - 80){
-			MoveLeft = 1;
-		} 
+		if(stickmanX <= -70){
+			stickmanX = canvasWidth;
+		}
 		
-		if(MoveLeft){
-			shipXPosition -= shipVelocity;
-		}else{
-			shipXPosition += shipVelocity;
+		if(planeXPosition == screenX/2 - canvasWidth/2 - 165){
+			planeXPosition = screenX/2 + canvasWidth/2;
 		}
 		
 		//show frame
