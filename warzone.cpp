@@ -1068,6 +1068,8 @@ int main() {
 	int chuteX = 400;
 	int chuteY = 50;
 	int stickmanX = 1150;
+	int stickmanEncounter = 0;
+	int chutesize = 50;
 	
 	/* Main Loop ------------------------------------------------------- */
 	
@@ -1090,10 +1092,15 @@ int main() {
 		// draw plane
 		drawPlane(&canvas, coord(planeXPosition -= planeVelocity, planeYPosition), rgb(99, 99, 99));
 		
+		if(chutesize <= 200){
+			chutesize++;
+		}
 		// draw parachute
-		drawParachute(&canvas, coord(chuteX+=4, chuteY+=1), rgb(99, 99, 99), 300);
+		drawParachute(&canvas, coord(chuteX+=4, chuteY+=1), rgb(99, 99, 99), chutesize);
 		
-		drawWalkingStickman(&canvas, coord(stickmanX -= 4, 503), rgb(99, 99, 99));
+		if(stickmanEncounter){
+			drawWalkingStickman(&canvas, coord(stickmanX -= 4, 503), rgb(99, 99, 99));
+		}
 		
 		rotateBaling(&canvas,coord(planeXPosition + 5,planeYPosition),rgb(255,255,255),balingCounter--);
 	
@@ -1172,6 +1179,10 @@ int main() {
 		
 		if(planeXPosition == screenX/2 - canvasWidth/2 - 165){
 			planeXPosition = screenX/2 + canvasWidth/2;
+		}
+		
+		if(chuteX >= canvasWidth + chutesize * 2){
+			stickmanEncounter = 1;
 		}
 		
 		//show frame
