@@ -1095,7 +1095,7 @@ int main() {
 		
 		drawWalkingStickman(&canvas, coord(stickmanX -= 4, 503), rgb(99, 99, 99));
 		
-		rotateBaling(&canvas,coord(balingXPosition -= planeVelocity,planeYPosition),rgb(255,255,255),balingCounter--);
+		rotateBaling(&canvas,coord(planeXPosition + 5,planeYPosition),rgb(255,255,255),balingCounter--);
 	
 		drawBrokenBaling(&canvas,coord(300,300),rgb(255,255,255));
 
