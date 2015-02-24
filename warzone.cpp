@@ -1118,7 +1118,7 @@ int main() {
 	
 	int chuteX = 400;
 	int chuteY = 50;
-	int stickmanX = 1150;
+	int stickmanX = 1350;
 	int stickmanEncounter = 0;
 	int chutesize = 50;
 	int deployed = 0;
@@ -1151,15 +1151,15 @@ int main() {
 		if(isXploded == 0)
 			drawPlane(&canvas, coord(planeXPosition -= planeVelocity, planeYPosition), rgb(99, 99, 99));
 		
-		if(chutesize <= 200){
-			chutesize++;
-		}
 		// draw parachute
 		if(isXploded){
 			deployed = 1;
 		}
 		if(deployed)
 		{
+			if(chutesize <= 150){
+				chutesize++;
+			}
 			drawParachute(&canvas, coord(chuteX+=4, chuteY+=1), rgb(99, 99, 99), chutesize);
 			animateBan(&canvas, &coordBan, rgb(255, 99, 99), &bVel, &bVelX);
 		}
@@ -1179,7 +1179,7 @@ int main() {
 		//drawBrokenBaling(&canvas,coord(300,300),rgb(255,255,255));
 
 		// stickman ammunition
-		if(isFirstAmmunitionReleased){
+		if(isFirstAmmunitionReleased && !deployed){
 			firstAmmunitionCoordinate.y-=ammunitionVelocity;
 			
 			if(firstAmmunitionCoordinate.y <= canvasHeight/3 && !isSecondAmmunitionReleased){
@@ -1196,7 +1196,7 @@ int main() {
 			drawAmmunition(&canvas, firstAmmunitionCoordinate, 3, ammunitionLength, rgb(99, 99, 99));
 		}
 		
-		if(isSecondAmmunitionReleased){
+		if(isSecondAmmunitionReleased && !deployed){
 			secondAmmunitionCoordinate.y-=ammunitionVelocity;
 			
 			if(secondAmmunitionCoordinate.y <= canvasHeight/3 && !isFirstAmmunitionReleased){
